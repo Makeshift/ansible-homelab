@@ -22,9 +22,9 @@
   args:
     chdir: /tmp/neofetch-{{ neofetch_version }}
   when: installed_neofetch_version.stdout != neofetch_version
-# - name: Activate Neofetch
-#   ansible.builtin.lineinfile:
-#     path: /etc/profile
-#     line: "[[ $- = *i* ]] && neofetch"
-#     state: present
-#     insertafter: EOF
+- name: Activate Neofetch
+  ansible.builtin.lineinfile:
+    path: /etc/profile
+    line: "[[ $- = *i* ]] && export NEOFETCH_LAUNCHED_BY_PROFILE=1 && neofetch"
+    state: present
+    insertafter: EOF

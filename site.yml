@@ -8,8 +8,20 @@
         chdir: "{{ playbook_dir }}"
       delegate_to: localhost
 
-- name: Users
+- name: Get OS
   hosts: all
+  gather_facts: no
+  tasks:
+    - name: Get OS
+      ansible.builtin.setup:
+        gather_subset:
+          - "system"
+    - name: Set OS
+      ansible.builtin.group_by:
+        key: "{{ ansible_system }}"
+
+- name: Users
+  hosts: Linux
   become: yes
   gather_facts: yes
   roles:
@@ -17,21 +29,28 @@
       vars:
         user: "connor"
         github_user: "Makeshift"
+    - role: create_user
+      vars:
+        user: "dusty"
+        github_user: "kitsunedj"
 
 - name: Common
-  hosts: all
+  hosts: Linux
   gather_facts: yes
   become: yes
   vars:
     - user: connor
+    - wifi_country: GB
+    - dns_server: 172.16.0.1
   roles:
     - role: packages
     - role: liquidprompt
     - role: neofetch
     - role: known_hosts
+    - role: raspberry
 
 - name: Chezmoi
-  hosts: all
+  hosts: Linux
   become: yes
   become_user: connor
   gather_facts: yes

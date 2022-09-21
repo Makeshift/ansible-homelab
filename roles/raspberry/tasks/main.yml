@@ -1,0 +1,21 @@
+---
+- name: Check if device is a Raspberry pi
+  ansible.builtin.shell: cat /proc/device-tree/model | grep -i "raspberry pi"
+  register: is_raspberry
+  ignore_errors: true
+
+- name: Enable WiFi
+  ansible.builtin.shell: raspi-config nonint do_wifi_country {{ wifi_country }} && rfkill unblock wifi
+  when: is_raspberry.rc == 0
+
+- name: Disable the built-in pi user
+  ansible.builtin.shell: usermod -L pi
+  when: is_raspberry.rc == 0
+
+- name: Fix the stupid automatic DNS settings
+  ansible.builtin.lineinfile:
+    path: /etc/resolvconf.conf
+    regexp: "^#?#name_servers=.*"
+    line: "name_servers={{dns_server}}"
+    state: present
+  when: is_raspberry.rc == 0

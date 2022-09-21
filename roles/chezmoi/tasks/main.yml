@@ -10,6 +10,8 @@
 
 - name: Install Chezmoi
   ansible.builtin.shell: bash -lc '"curl -fsLS https://chezmoi.io/get | bash"'
+  args:
+    chdir: /home/${{ ansible_user_id }}
   when: installed_chezmoi_version.rc != 0
   register: install_chezmoi
 
@@ -31,3 +33,13 @@
 
 - name: Update Chezmoi
   ansible.builtin.shell: bash -lc 'chezmoi update --force'
+
+- name: Check if ~/lib/libstderred.so exists
+  ansible.builtin.stat:
+    path: /home/{{ansible_user_id}}/lib/libstderred.so
+  register: libstderred_installed
+  ignore_errors: true
+
+- name: Install stderred
+  ansible.builtin.shell: bash -lc '$HOME/bin/install_stderred'
+  when: not libstderred_installed.stat.exists

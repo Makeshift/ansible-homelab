@@ -20,6 +20,6 @@
 - name: Activate Liquidprompt
   ansible.builtin.lineinfile:
     path: /etc/profile
-    line: "[[ $- = *i* ]] && source /etc/liquidprompt/liquidprompt"
+    line: "[[ $- = *i* ]] && export LIQUIDPROPMT_LAUNCHED_BY_PROFILE=1 && source /etc/liquidprompt/liquidprompt"
     state: present
     insertafter: EOF

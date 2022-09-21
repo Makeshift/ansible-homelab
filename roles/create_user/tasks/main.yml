@@ -17,3 +17,10 @@
     key: "{{ item }}"
   loop: "{{ query('ansible.builtin.url', 'https://github.com/{{ github_user }}.keys') }}"
   when: github_user is defined
+
+- name: Touch some files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: touch
+  loop:
+    ["/home/{{user}}/.motd_shown", "/home/{{user}}/.sudo_as_admin_successful"]

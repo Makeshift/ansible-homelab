@@ -7,6 +7,7 @@
     cache_valid_time: 86400
   when: ansible_os_family == "Debian"
 
+# Some of these are debian-only, but I don't need to support anything else yet
 - name: Install the latest version of various packages
   ansible.builtin.package:
     name:
@@ -27,7 +28,13 @@
       - xxd
       - fail2ban
       - unattended-upgrades
+      - apt-file
+      - dnsutils
     state: latest
+
+- name: Populate apt-file cache
+  ansible.builtin.shell: apt-file update
+  when: ansible_os_family == "Debian"
 
 - name: Correct Python version selected
   community.general.alternatives:
@@ -41,3 +48,48 @@
     path: "{{ item }}"
     state: absent
   loop: ["/etc/update-motd.d/", "/etc/motd", "/etc/legal"]
+
+- name: Remove PrintMotd from /etc/ssh/sshd_config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PrintMotd"
+    line: "PrintMotd no"
+    state: present
+  register: sshd_config_changed
+
+- name: Remove PrintLastLog from /etc/ssh/sshd_config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PrintLastLog"
+    line: "PrintLastLog no"
+    state: present
+  register: sshd_config_changed
+
+- name: Restart sshd
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  when: sshd_config_changed.changed
+
+# Update libseccomp2 because of the bug with docker+time https://raspberrypi.stackexchange.com/questions/121159/docker-alpinelatest-image-fails-to-get-date-so-everything-fails
+- name: Add backports repo keys
+  ansible.builtin.apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: "{{ item }}"
+  loop: ["04EE7237B7D453EC", "648ACFD622F3D138"]
+  when: ansible_distribution_release == 'buster'
+
+- name: Add backports repo
+  ansible.builtin.apt_repository:
+    repo: deb http://deb.debian.org/debian buster-backports main
+    state: present
+  when: ansible_distribution_release == 'buster'
+
+- name: Install libseccomp2 from backports
+  ansible.builtin.apt:
+    name: libseccomp2
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+    default_release: buster-backports
+  when: ansible_distribution_release == 'buster'
