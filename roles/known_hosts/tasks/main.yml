@@ -1,0 +1,7 @@
+---
+- name: Add known hosts
+  ansible.builtin.known_hosts:
+    path: /etc/ssh/ssh_known_hosts
+    name: "{{ item }}"
+    key: "{{ lookup('pipe', 'ssh-keyscan -t rsa ' + item) }}"
+  loop: ["github.com"]

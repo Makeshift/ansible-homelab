@@ -1,0 +1,43 @@
+---
+- name: Update & Upgrade
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: true
+    cache_valid_time: 86400
+  when: ansible_os_family == "Debian"
+
+- name: Install the latest version of various packages
+  ansible.builtin.package:
+    name:
+      - git
+      - python3
+      - ca-certificates
+      - curl
+      - wget
+      - unzip
+      - lm-sensors
+      - htop
+      - glances
+      - ripgrep
+      - fd-find
+      - exa
+      - rsync
+      - rclone
+      - xxd
+      - fail2ban
+      - unattended-upgrades
+    state: latest
+
+- name: Correct Python version selected
+  community.general.alternatives:
+    name: python
+    path: /usr/bin/python3
+    link: /usr/bin/python
+    state: auto
+
+- name: Remove extra bash stuff
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: ["/etc/update-motd.d/", "/etc/motd", "/etc/legal"]

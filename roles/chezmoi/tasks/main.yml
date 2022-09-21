@@ -1,0 +1,33 @@
+---
+- debug:
+    msg: "Hello, {{ ansible_user_id }}!"
+  when: ansible_user_id is defined
+
+- name: Get chezmoi version
+  ansible.builtin.shell: bash -lc 'chezmoi --version'
+  register: installed_chezmoi_version
+  ignore_errors: true
+
+- name: Install Chezmoi
+  ansible.builtin.shell: bash -lc '"curl -fsLS https://chezmoi.io/get | bash"'
+  when: installed_chezmoi_version.rc != 0
+  register: install_chezmoi
+
+- name: Get chezmoi version
+  ansible.builtin.shell: bash -lc 'chezmoi --version'
+  register: installed_chezmoi_version
+  ignore_errors: false
+  when: install_chezmoi.changed
+
+- name: Check if Chezmoi has init'd
+  ansible.builtin.stat:
+    path: /home/{{ansible_user_id}}/.config/chezmoi/chezmoistate.boltdb
+  register: chezmoi_init
+  ignore_errors: true
+
+- name: Init Chezmoi
+  ansible.builtin.shell: bash -lc 'chezmoi init --force --apply --verbose {{ github_user }}'
+  when: not chezmoi_init.stat.exists
+
+- name: Update Chezmoi
+  ansible.builtin.shell: bash -lc 'chezmoi update --force'

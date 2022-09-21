@@ -1,0 +1,19 @@
+---
+- name: Create {{ user }}
+  ansible.builtin.user:
+    name: "{{ user }}"
+    state: present
+
+- name: Add {{ user }} to sudoers
+  community.general.sudoers:
+    name: "{{ user }}-sudo"
+    user: "{{ user }}"
+    commands: "ALL"
+    nopassword: true
+
+- name: Add authorized_keys entries
+  ansible.builtin.authorized_key:
+    user: "{{ user }}"
+    key: "{{ item }}"
+  loop: "{{ query('ansible.builtin.url', 'https://github.com/{{ github_user }}.keys') }}"
+  when: github_user is defined

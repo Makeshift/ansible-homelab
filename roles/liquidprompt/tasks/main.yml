@@ -1,0 +1,25 @@
+---
+- name: Check if Liquidprompt is installed
+  ansible.builtin.stat:
+    path: /etc/liquidprompt/liquidprompt
+  register: liquidprompt_installed
+
+- name: Download Liquidprompt
+  ansible.builtin.get_url:
+    url: https://github.com/nojhan/liquidprompt/releases/download/v{{liquidpropmt_version}}/liquidprompt-v{{liquidpropmt_version}}.tar.gz
+    dest: /tmp/liquidprompt.tar.gz
+  when: not liquidprompt_installed.stat.exists
+
+- name: Extract Liquidprompt
+  ansible.builtin.unarchive:
+    src: /tmp/liquidprompt.tar.gz
+    dest: /etc
+    remote_src: true
+  when: not liquidprompt_installed.stat.exists
+
+- name: Activate Liquidprompt
+  ansible.builtin.lineinfile:
+    path: /etc/profile
+    line: "[[ $- = *i* ]] && source /etc/liquidprompt/liquidprompt"
+    state: present
+    insertafter: EOF

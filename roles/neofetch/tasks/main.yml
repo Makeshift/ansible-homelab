@@ -1,0 +1,30 @@
+---
+- name: Check current neofetch version
+  ansible.builtin.shell: neofetch --version | cut -d' ' -f2
+  register: installed_neofetch_version
+  ignore_errors: true
+
+- name: Download Neofetch
+  ansible.builtin.get_url:
+    url: https://github.com/dylanaraps/neofetch/archive/refs/tags/{{ neofetch_version }}.tar.gz
+    dest: /tmp/neofetch.tar.gz
+  when: installed_neofetch_version.stdout != neofetch_version
+
+- name: Extract Neofetch
+  ansible.builtin.unarchive:
+    src: /tmp/neofetch.tar.gz
+    dest: /tmp
+    remote_src: true
+  when: installed_neofetch_version.stdout != neofetch_version
+
+- name: Install Neofetch
+  ansible.builtin.shell: make install
+  args:
+    chdir: /tmp/neofetch-{{ neofetch_version }}
+  when: installed_neofetch_version.stdout != neofetch_version
+# - name: Activate Neofetch
+#   ansible.builtin.lineinfile:
+#     path: /etc/profile
+#     line: "[[ $- = *i* ]] && neofetch"
+#     state: present
+#     insertafter: EOF
